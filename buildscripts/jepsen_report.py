@@ -32,11 +32,10 @@ _JEPSEN_TIME_RE = re.compile("[0-9]{4}-[0-8]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]
 def _time_parse(time: str):
     split = time.split(",")
     date = datetime.strptime(split[0], _JEPSEN_TIME_FORMAT)
-    match = _JEPSEN_MILLI_RE.match(split[1])
-    microseconds = 0
-    if match:
+    if match := _JEPSEN_MILLI_RE.match(split[1]):
         microseconds = int(match[1]) * 1000
-
+    else:
+        microseconds = 0
     return date.replace(microsecond=microseconds, tzinfo=timezone.utc)
 
 
@@ -89,29 +88,20 @@ def parse(text: List[str]) -> ParserOutput:
             target = failed_tests
             continue
 
-        # at this point we're parsing this table:
-        # 29 successes
-        # 0 unknown
-        # 1 crashed
-        # 0 failures
-        s_match = SUCCESS_RE.match(line)
-        if s_match:
+        if s_match := SUCCESS_RE.match(line):
             target = None
             assert int(s_match[1]) == len(successful_tests)
             table_matches += 1
 
-        u_match = UNKNOWN_RE.match(line)
-        if u_match:
+        if u_match := UNKNOWN_RE.match(line):
             target = None
             assert int(u_match[1]) == len(indeterminate_tests)
             table_matches += 1
-        c_match = CRASH_RE.match(line)
-        if c_match:
+        if c_match := CRASH_RE.match(line):
             target = None
             assert int(c_match[1]) == len(crashed_tests)
             table_matches += 1
-        f_match = FAIL_RE.match(line)
-        if f_match:
+        if f_match := FAIL_RE.match(line):
             target = None
             assert int(f_match[1]) == len(failed_tests)
             table_matches += 1
@@ -214,11 +204,7 @@ def main(filename: str, start_time: str, end_time: str, elapsed: str, emit_statu
             with open("jepsen_system_fail.txt", "w") as fh:
                 fh.write(str(exit_code))
     else:
-        if out['unknown'] or out['failed']:
-            exit_code = 1
-        else:
-            exit_code = 0
-
+        exit_code = 1 if out['unknown'] or out['failed'] else 0
     sys.exit(exit_code)
 
 

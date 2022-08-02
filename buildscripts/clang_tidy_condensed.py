@@ -90,8 +90,7 @@ def _report_status(total_jobs: int, clang_tidy_executor_threads: List[threading.
     while running_jobs > 0:
         time.sleep(5)
         pretty_time_duration = str(datetime.timedelta(seconds=time.time() - start_time))
-        running_jobs = sum(
-            [1 for t in clang_tidy_executor_threads if t.is_alive()])  # Count threads running a job
+        running_jobs = sum(1 for t in clang_tidy_executor_threads if t.is_alive())
         # files_to_tidy contains a None which can be ignored
         print(
             f"There are {running_jobs} active jobs. The number of jobs queued is {files_to_tidy.qsize()-1}/{total_jobs}. Duration {pretty_time_duration}."
@@ -126,7 +125,7 @@ def main():
 
     for file_doc in compile_commands:
         # A few special cases of files to ignore
-        if not "src/mongo" in file_doc["file"]:
+        if "src/mongo" not in file_doc["file"]:
             continue
         # TODO SERVER-49884 Remove this when we no longer check in generated Bison.
         if "parser_gen.cpp" in file_doc["file"]:
@@ -156,7 +155,11 @@ def main():
         thread.join()
 
     # Zip up all the files for upload
-    subprocess.run(["tar", "-czvf", args.output_dir + ".tgz", args.output_dir], check=False)
+    subprocess.run(
+        ["tar", "-czvf", f"{args.output_dir}.tgz", args.output_dir],
+        check=False,
+    )
+
 
     return failed_files
 

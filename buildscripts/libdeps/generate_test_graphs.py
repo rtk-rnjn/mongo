@@ -322,7 +322,7 @@ def get_simple_directory_graph():
 def save_graph_file(graph, output_dir):
     """Save a graph locally as a .graphml."""
 
-    filename = output_dir + "/libdeps_" + graph.graph['git_hash'] + ".graphml"
+    filename = f"{output_dir}/libdeps_" + graph.graph['git_hash'] + ".graphml"
     networkx.write_graphml(graph, filename, named_key_ids=True)
 
 

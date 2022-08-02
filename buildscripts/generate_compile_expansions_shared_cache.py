@@ -23,7 +23,7 @@ def generate_expansions():
     """
     args = parse_args()
     expansions = {}
-    expansions.update(generate_scons_cache_expansions())
+    expansions |= generate_scons_cache_expansions()
 
     with open(args.out, "w") as out:
         print("saving compile expansions to {0}: ({1})".format(args.out, expansions))
@@ -58,17 +58,13 @@ def generate_scons_cache_expansions():
 
     # Global shared cache using EFS
     if os.getenv("SCONS_CACHE_SCOPE") == "shared":
-        if sys.platform.startswith("win"):
-            shared_mount_root = 'X:\\'
-        else:
-            shared_mount_root = '/efs'
+        shared_mount_root = 'X:\\' if sys.platform.startswith("win") else '/efs'
         default_cache_path = os.path.join(shared_mount_root, system_uuid, "scons-cache")
         expansions["scons_cache_path"] = default_cache_path
         expansions[
             "scons_cache_args"] = "--cache={0} --cache-signature-mode=validate --cache-dir={1}".format(
                 scons_cache_mode, shlex.quote(default_cache_path))
 
-    # Local shared cache - host-based
     elif os.getenv("SCONS_CACHE_SCOPE") == "local":
 
         if sys.platform.startswith("win"):
@@ -81,7 +77,6 @@ def generate_scons_cache_expansions():
         expansions[
             "scons_cache_args"] = "--cache={0} --cache-signature-mode=validate --cache-dir={1}".format(
                 scons_cache_mode, shlex.quote(default_cache_path))
-    # No cache
     else:
         # Anything else is 'none'
         print("No cache used")

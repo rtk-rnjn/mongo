@@ -129,8 +129,7 @@ class CmdOutputExtractor:
         """
         mongodb_version = None
 
-        search = BUILD_INFO_RE.search(out)
-        if search:
+        if search := BUILD_INFO_RE.search(out):
             build_info = self.json_decoder.decode(search.group(1))
             mongodb_version = build_info.get("version")
 
@@ -308,8 +307,7 @@ class Mapper:
         :return: full path of downloaded file in local filesystem
         """
 
-        tarball_full_path = download.download_from_s3(url)
-        return tarball_full_path
+        return download.download_from_s3(url)
 
     def generate_build_id_mapping(self) -> Generator[Dict[str, str], None, None]:
         """

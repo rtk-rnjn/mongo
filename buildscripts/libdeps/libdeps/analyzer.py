@@ -94,15 +94,10 @@ def schema_check(func, schema_version):
 
         if schema_version <= args[0].graph_schema:
             return func(*args, **kwargs)
-        else:
-            analyzer = get_class_that_defined_method(func)
-            if not analyzer:
-                analyzer = "UnknownAnalyzer"
-            else:
-                analyzer = analyzer.__name__
-
-            raise UnsupportedAnalyzer(
-                textwrap.dedent(f"""\
+        analyzer = get_class_that_defined_method(func)
+        analyzer = analyzer.__name__ if analyzer else "UnknownAnalyzer"
+        raise UnsupportedAnalyzer(
+            textwrap.dedent(f"""\
 
 
                     ERROR: analysis for '{analyzer}' requires graph schema version '{schema_version}'
@@ -447,12 +442,15 @@ class ExcludeDependents(Analyzer):
         node, but do not depend on the set of nodes.
         """
 
-        valid_depender_nodes = []
-        for depender_node in set(self._dependents_graph[self._nodes[0]]):
+        valid_depender_nodes = [
+            depender_node
+            for depender_node in set(self._dependents_graph[self._nodes[0]])
             if all(
-                    bool(excludes_node not in set(self._dependency_graph[depender_node]))
-                    for excludes_node in self._nodes[1:]):
-                valid_depender_nodes.append(depender_node)
+                excludes_node not in set(self._dependency_graph[depender_node])
+                for excludes_node in self._nodes[1:]
+            )
+        ]
+
         return sorted(valid_depender_nodes)
 
     def report(self, report):
@@ -526,8 +524,9 @@ class GraphPaths(Analyzer):
 
         if DependsReportTypes.GRAPH_PATHS.name not in report:
             report[DependsReportTypes.GRAPH_PATHS.name] = {}
-        report[DependsReportTypes.GRAPH_PATHS.name][tuple([self._from_node,
-                                                           self._to_node])] = self.run()
+        report[DependsReportTypes.GRAPH_PATHS.name][
+            self._from_node, self._to_node
+        ] = self.run()
 
 
 class SymbolDependents(Analyzer):
@@ -544,17 +543,16 @@ class SymbolDependents(Analyzer):
         """Find all symbol dependents between the two nodes in the graph."""
 
         edge = self._dependents_graph.get_edge_data(u=self._from_node, v=self._to_node)
-        if 'symbols' in edge:
-            return edge['symbols'].split()
-        return []
+        return edge['symbols'].split() if 'symbols' in edge else []
 
     def report(self, report):
         """Add the symbol dependents list to the report."""
 
         if DependsReportTypes.SYMBOL_DEPENDS.name not in report:
             report[DependsReportTypes.SYMBOL_DEPENDS.name] = {}
-        report[DependsReportTypes.SYMBOL_DEPENDS.name][tuple([self._from_node,
-                                                              self._to_node])] = self.run()
+        report[DependsReportTypes.SYMBOL_DEPENDS.name][
+            self._from_node, self._to_node
+        ] = self.run()
 
 
 class CriticalEdges(Analyzer):
@@ -589,8 +587,9 @@ class CriticalEdges(Analyzer):
 
         if DependsReportTypes.CRITICAL_EDGES.name not in report:
             report[DependsReportTypes.CRITICAL_EDGES.name] = {}
-        report[DependsReportTypes.CRITICAL_EDGES.name][tuple([self._from_node,
-                                                              self._to_node])] = self.run()
+        report[DependsReportTypes.CRITICAL_EDGES.name][
+            self._from_node, self._to_node
+        ] = self.run()
 
 
 class UnusedPublicLinter(Analyzer):
@@ -606,9 +605,10 @@ class UnusedPublicLinter(Analyzer):
             try:
                 edge_attribs = self._dependents_graph[original_node][depender]
 
-                if (edge_attribs.get(EdgeProps.visibility.name) == int(self.get_deptype('Public'))
-                        or edge_attribs.get(EdgeProps.visibility.name) == int(
-                            self.get_deptype('Interface'))):
+                if edge_attribs.get(EdgeProps.visibility.name) in [
+                    int(self.get_deptype('Public')),
+                    int(self.get_deptype('Interface')),
+                ]:
                     if not edge_attribs.get(EdgeProps.symbols.name):
                         if not self._tree_uses_no_symbols(depender, original_nodes, checked_edges):
                             return False
@@ -637,9 +637,12 @@ class UnusedPublicLinter(Analyzer):
         """Check the edge against the transitive nodes for symbols."""
 
         for trans_node in self._dependency_graph[edge[0]]:
-            if (self._dependency_graph[edge[0]][trans_node].get(EdgeProps.visibility.name) == int(
-                    self.get_deptype('Public')) or self._dependency_graph[edge[0]][trans_node].get(
-                        EdgeProps.visibility.name) == int(self.get_deptype('Interface'))):
+            if self._dependency_graph[edge[0]][trans_node].get(
+                EdgeProps.visibility.name
+            ) in [
+                int(self.get_deptype('Public')),
+                int(self.get_deptype('Interface')),
+            ]:
                 trans_pub_nodes.add(trans_node)
                 try:
                     if self._dependents_graph[trans_node][edge[1]].get(EdgeProps.symbols.name):
@@ -670,7 +673,7 @@ class UnusedPublicLinter(Analyzer):
                 # First we will get all the transitive libdeps the dependent node
                 # induces, while we are getting those we also check if the depender
                 # node has any symbol dependencies to that transitive libdep.
-                trans_pub_nodes = set([edge[0]])
+                trans_pub_nodes = {edge[0]}
                 found_symbols = self._check_trans_nodes_no_symbols(edge, trans_pub_nodes)
 
                 # If the depender node has no symbol dependencies on the induced libdeps,

@@ -23,7 +23,7 @@ def generate_expansions():
     """
     args = parse_args()
     expansions = {}
-    expansions.update(generate_scons_cache_expansions())
+    expansions |= generate_scons_cache_expansions()
 
     with open(args.out, "w") as out:
         print("saving compile expansions to {0}: ({1})".format(args.out, expansions))

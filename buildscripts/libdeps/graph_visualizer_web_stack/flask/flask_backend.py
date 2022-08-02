@@ -172,8 +172,9 @@ class BackendServer:
 
                 return nodeinfo_data, 200
             return {
-                'error': 'Git commit hash (' + git_hash + ') does not have a matching graph file.'
+                'error': f'Git commit hash ({git_hash}) does not have a matching graph file.'
             }, 400
+
         return {'error': 'Request body does not contain "selected_nodes" attribute.'}, 400
 
     def return_d3(self, git_hash):
@@ -226,8 +227,9 @@ class BackendServer:
                 }
                 return node_data, 200
             return {
-                'error': 'Git commit hash (' + git_hash + ') does not have a matching graph file.'
+                'error': f'Git commit hash ({git_hash}) does not have a matching graph file.'
             }, 400
+
         return {'error': 'Request body does not contain "selected_nodes" attribute.'}, 400
 
     def return_analyze_counts(self, git_hash):
@@ -243,12 +245,14 @@ class BackendServer:
                 ga = libdeps.analyzer.LibdepsGraphAnalysis(analysis)
                 results = ga.get_results()
 
-                graph_data = []
-                for i, data in enumerate(results):
-                    graph_data.append({'id': i, 'type': data, 'value': results[data]})
+                graph_data = [
+                    {'id': i, 'type': data, 'value': results[data]}
+                    for i, data in enumerate(results)
+                ]
+
                 return {'results': graph_data}, 200
             return {
-                'error': 'Git commit hash (' + git_hash + ') does not have a matching graph file.'
+                'error': f'Git commit hash ({git_hash}) does not have a matching graph file.'
             }, 400
 
     def return_paths_between(self, git_hash):
@@ -279,22 +283,23 @@ class BackendServer:
                     'extraNodes': list(nodes)
                 }, 200
             return {
-                'error': 'Git commit hash (' + git_hash + ') does not have a matching graph file.'
+                'error': f'Git commit hash ({git_hash}) does not have a matching graph file.'
             }, 400
+
         return {'error': 'Body must contain toNode and fromNode'}, 400
 
     def return_node_list(self, git_hash):
         """Gather all the nodes in the graph for the node list."""
 
         with self.app.test_request_context():
-            node_data = {'nodes': [], 'links': []}
             if graph := self.load_graph(git_hash):
+                node_data = {'nodes': [], 'links': []}
                 for node in sorted(graph.nodes()):
                     node_path = Path(node)
                     node_data['nodes'].append(str(node_path))
                 return node_data, 200
             return {
-                'error': 'Git commit hash (' + git_hash + ') does not have a matching graph file.'
+                'error': f'Git commit hash ({git_hash}) does not have a matching graph file.'
             }, 400
 
     def load_graph(self, git_hash):
@@ -303,10 +308,9 @@ class BackendServer:
         with self.app.test_request_context():
             if git_hash in self.loaded_graphs:
                 return self.loaded_graphs[git_hash]
-            else:
-                if git_hash in self.graph_files:
-                    file_path = self.graph_files[git_hash].graph_file
-                    graph = libdeps.graph.LibdepsGraph(networkx.read_graphml(file_path))
-                    self.loaded_graphs[git_hash] = graph
-                    return graph
-                return None
+            if git_hash in self.graph_files:
+                file_path = self.graph_files[git_hash].graph_file
+                graph = libdeps.graph.LibdepsGraph(networkx.read_graphml(file_path))
+                self.loaded_graphs[git_hash] = graph
+                return graph
+            return None

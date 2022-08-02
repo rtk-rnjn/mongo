@@ -63,8 +63,8 @@ def parse_optimizer_node(explain_node: dict[str, any]) -> Node:
 def get_children(explain_node: dict[str, any]) -> list[Node]:
     """Get children nodes of the ABT node."""
     children_refs = ['child', 'leftChild', 'rightChild']
-    children = []
-    for ref in children_refs:
-        if ref in explain_node:
-            children.append(parse_optimizer_node(explain_node[ref]))
-    return children
+    return [
+        parse_optimizer_node(explain_node[ref])
+        for ref in children_refs
+        if ref in explain_node
+    ]

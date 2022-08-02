@@ -27,7 +27,7 @@ def generate_mongo_version_file():
     with open(MONGO_VERSION_YAML, 'w') as mongo_version_fh:
         # E.g. res = 'r5.1.0-alpha-597-g8c345c6693\n'
         res = res[1:]  # Remove the leading "r" character.
-        mongo_version_fh.write("mongo_version: " + res)
+        mongo_version_fh.write(f"mongo_version: {res}")
 
 
 def generate_releases_file():
@@ -36,8 +36,9 @@ def generate_releases_file():
     releases_yaml_path = os.path.join("src", "mongo", "util", "version", "releases.yml")
     if not os.path.isfile(releases_yaml_path):
         LOGGER.info(
-            'Skipping yml file generation because file .resmoke_mongo_release_values.yml does not exist at path {}.'
-            .format(releases_yaml_path))
+            f'Skipping yml file generation because file .resmoke_mongo_release_values.yml does not exist at path {releases_yaml_path}.'
+        )
+
         return
 
     shutil.copyfile(releases_yaml_path, RELEASES_YAML)
@@ -71,7 +72,7 @@ else:
 
 def evg_project_str(version):
     """Return the evergreen project name for the given version."""
-    return 'mongodb-mongo-v{}.{}'.format(version.major, version.minor)
+    return f'mongodb-mongo-v{version.major}.{version.minor}'
 
 
 multiversion_service = MultiversionService(
@@ -103,8 +104,10 @@ REQUIRES_FCV_TAG_LATEST = version_constants.get_latest_tag()
 REQUIRES_FCV_TAG = version_constants.get_fcv_tag_list()
 
 # Generate evergreen project names for all FCVs less than latest.
-EVERGREEN_PROJECTS = ['mongodb-mongo-master']
-EVERGREEN_PROJECTS.extend([evg_project_str(fcv) for fcv in version_constants.fcvs_less_than_latest])
+EVERGREEN_PROJECTS = [
+    'mongodb-mongo-master',
+    *[evg_project_str(fcv) for fcv in version_constants.fcvs_less_than_latest],
+]
 
 OLD_VERSIONS = [
     LAST_LTS
@@ -114,8 +117,8 @@ OLD_VERSIONS = [
 
 def log_constants(exec_log):
     """Log FCV constants."""
-    exec_log.info("Last LTS FCV: {}".format(LAST_LTS_FCV))
-    exec_log.info("Last Continuous FCV: {}".format(LAST_CONTINUOUS_FCV))
-    exec_log.info("Latest FCV: {}".format(LATEST_FCV))
-    exec_log.info("Requires FCV Tag Latest: {}".format(REQUIRES_FCV_TAG_LATEST))
-    exec_log.info("Requires FCV Tag: {}".format(REQUIRES_FCV_TAG))
+    exec_log.info(f"Last LTS FCV: {LAST_LTS_FCV}")
+    exec_log.info(f"Last Continuous FCV: {LAST_CONTINUOUS_FCV}")
+    exec_log.info(f"Latest FCV: {LATEST_FCV}")
+    exec_log.info(f"Requires FCV Tag Latest: {REQUIRES_FCV_TAG_LATEST}")
+    exec_log.info(f"Requires FCV Tag: {REQUIRES_FCV_TAG}")

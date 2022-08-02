@@ -46,11 +46,11 @@ def calibrate(config: AbtCalibratorConfig, database: DatabaseInstance, abt_types
     if not config.enabled:
         return False
 
-    result = {}
     stats = collect_stats(config, database, abt_types)
-    for abt, abt_stats in stats.items():
-        result[abt] = estimate(abt_stats, config.test_size, config.trace)
-    return result
+    return {
+        abt: estimate(abt_stats, config.test_size, config.trace)
+        for abt, abt_stats in stats.items()
+    }
 
 
 def collect_stats(config: AbtCalibratorConfig, database: DatabaseInstance,
